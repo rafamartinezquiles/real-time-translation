@@ -80,4 +80,38 @@ cd backend
 
 This folder contains the Python FastAPI server responsible for the heavy lifting: running OCR through Tesseract, extracting text from PDFs, detecting language, and performing offline translation using Argos Translate. Before starting the server, make sure your Python virtual environment is activated and with the requirements installed!
 
-Since this project performs OCR locally, you must also ensure that Tesseract OCR is installed on your machine. On Windows, this involves installing the “tesseract-ocr-w64-setup” package from the official UB Mannheim build. Once installed, confirm that tesseract.exe is available in your system PATH by typing tesseract --version in your terminal. If the command works, the OCR engine is correctly installed.
+Since this project performs OCR locally, you must also ensure that Tesseract OCR is installed on your machine. On Windows, this involves installing the “tesseract-ocr-w64-setup” package from the official UB Mannheim build. Once installed, confirm that tesseract.exe is available in your system PATH by typing tesseract --version in your terminal. If the command works, the OCR engine is correctly installed. Before launching the backend, all translation models must be downloaded so the system can translate text between languages offline. This is done through a dedicated helper script. From inside the backend directory, run 
+
+```bash
+python -m src.install_argos_models
+```
+
+The script will automatically fetch and install the required Argos Translate packages for English, Spanish, French, German, and Italian in both directions. This step only needs to be done once. After the models are installed, the backend is ready to run. Start it with the command:
+
+```bash
+uvicorn src.main:app --reload --port 8000
+```
+
+With your backend running on http://localhost:8000, the next step is to launch the frontend. Open a second terminal window and navigate to the frontend/ directory. 
+
+```bash
+cd frontend
+```
+
+The frontend is a React + TypeScript application built with Vite, which provides a fast development server and instant updates as you work. Install the frontend dependencies. This step downloads all required JavaScript packages, including React, Vite, and the components used in the interface.
+
+```bash
+npm install
+```
+
+Once the installation is complete, start the development server by running:
+
+```bash
+npm run dev
+```
+
+This will launch the UI at http://localhost:5173. When you open that address in your browser, you will see the full interface with an upload form, language selectors, and a results panel. Behind the scenes, the frontend communicates directly with the FastAPI backend, sending uploaded files for OCR or PDF parsing and receiving translated text in return.
+
+At this point, the entire system is operational. Simply upload any image or PDF and select the target language. If the file is an image, the backend will automatically perform OCR using Tesseract. If the file is a PDF, the system will extract the embedded text using PyPDF2. In both cases, the extracted text is analyzed to determine its original language and then translated offline using the Argos models installed earlier. Within a few seconds, your browser will display both the original extracted text and its translated version side-by-side.
+
+Once both servers are running, no additional setup is required. The system can operate entirely offline, safely processing sensitive documents without sending data to any external services. You can now explore, test, and extend the tool freely, translating documents in a private, efficient, and user-friendly environment.
