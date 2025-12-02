@@ -12,6 +12,8 @@ Keeping OCR in its own module makes it easy to:
 from io import BytesIO
 from PIL import Image
 import pytesseract
+from typing import Optional
+
 
 # IMPORTANT: Windows path to tesseract.exe
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
