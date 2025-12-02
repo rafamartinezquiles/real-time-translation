@@ -10,7 +10,8 @@ library (so no external paid API calls are needed).
 from typing import Tuple
 
 from langdetect import detect, LangDetectException
-from argostranslate import package, translate
+from argostranslate import package as argos_package
+from argostranslate import translate as argos_translate
 
 from .config import LANGUAGE_CODES
 
@@ -20,29 +21,20 @@ def _ensure_language_package_installed(source_lang_code: str, target_lang_code: 
     Ensure that an Argos Translate language package for the desired
     source-target pair is installed.
 
-    Notes
-    -----
-    - In practice, language packages are installed via the CLI:
-        argos-translate-cli --install <package-id>
-      For example:
-        argos-translate-cli --install en_es
-    - Here we simply load installed packages. If none is found for
-      this pair, we raise an error so the caller can handle it.
+    We check installed packages; if none is found for this pair,
+    we raise an error so the caller can handle it.
     """
-    # Load installed Argos Translate packages
-    package.update_package_index()
-    available_packages = package.get_installed_packages()
+    installed_packages = argos_package.get_installed_packages()
 
-    for p in available_packages:
+    for p in installed_packages:
         if p.from_code == source_lang_code and p.to_code == target_lang_code:
-            # We found a suitable package
+            # We found a suitable package already installed
             return
 
     # If we get here, then the correct package is not installed
     raise RuntimeError(
         f"No Argos Translate package installed for {source_lang_code} -> {target_lang_code}. "
-        "Please install it using 'argos-translate-cli --install "
-        f"{source_lang_code}_{target_lang_code}'."
+        "Please install it using the helper script or argos-translate tools."
     )
 
 
@@ -59,11 +51,6 @@ def detect_language(text: str) -> str:
     -------
     str
         Two-letter ISO language code like 'en', 'es', etc.
-
-    Notes
-    -----
-    - Language detection is heuristic and may not be perfect,
-      especially for very short texts.
     """
     try:
         return detect(text)
@@ -102,22 +89,11 @@ def translate_text(
     # Make sure Argos has a model for this translation pair
     _ensure_language_package_installed(detected_lang_code, target_language_code)
 
-    # Load translations
-    translate.load_installed_packages()
-    available_translations = translate.get_installed_translations()
+    # Use the high-level translate function provided by Argos Translate.
+    translated_text = argos_translate.translate(
+        original_text,
+        from_code=detected_lang_code,
+        to_code=target_language_code,
+    )
 
-    # Find the exact translation object we need
-    translator = None
-    for t in available_translations:
-        if t.from_lang.code == detected_lang_code and t.to_lang.code == target_language_code:
-            translator = t
-            break
-
-    if translator is None:
-        raise RuntimeError(
-            f"No installed translator found for {detected_lang_code} -> {target_language_code}."
-        )
-
-    # Perform translation
-    translated = translator.translate(original_text)
-    return detected_lang_code, translated
+    return detected_lang_code, translated_text
