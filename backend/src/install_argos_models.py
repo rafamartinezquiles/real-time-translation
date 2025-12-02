@@ -1,41 +1,52 @@
 """
 install_argos_models.py
 
-Small helper script to download and install Argos Translate models
-directly from Python (no CLI needed).
+Install all Argos Translate models needed for your app.
+This avoids CLI issues on Windows and uses Argos' official Python API.
 """
 
-from argostranslate import package, translate
+from argostranslate import package as argos_package
+from argostranslate import translate as argos_translate
+
+
+LANG_PAIRS = [
+    ("en", "es"),
+    ("es", "en"),
+    ("en", "fr"),
+    ("fr", "en"),
+    ("en", "de"),
+    ("de", "en"),
+    ("en", "it"),
+    ("it", "en"),
+]
 
 
 def install_pair(from_code: str, to_code: str) -> None:
-    print("Updating package index...")
-    package.update_package_index()
+    print(f"\n=== Installing {from_code} -> {to_code} ===")
+    argos_package.update_package_index()
+    available = argos_package.get_available_packages()
 
-    print(f"Searching for package {from_code} -> {to_code} ...")
-    available_packages = package.get_available_packages()
-
-    for p in available_packages:
+    for p in available:
         if p.from_code == from_code and p.to_code == to_code:
             print("Found package:", p.get_description())
-            package_path = p.download()
-            print("Downloaded to:", package_path)
-            package.install_from_path(package_path)
-            print(f"Successfully installed {from_code} -> {to_code}")
+            path = p.download()
+            print("Downloaded to:", path)
+            argos_package.install_from_path(path)
+            print(f"SUCCESS: Installed {from_code} -> {to_code}")
             return
 
-    raise RuntimeError(f"No package found for {from_code} -> {to_code}")
+    print(f"ERROR: Could not find {from_code} -> {to_code} in package index!")
 
 
 if __name__ == "__main__":
-    # Install English -> Spanish
-    install_pair("en", "es")
+    print("Installing ALL language pairs...")
 
-    # If you want Spanish -> English too, uncomment:
-    # install_pair("es", "en")
+    for src, tgt in LANG_PAIRS:
+        install_pair(src, tgt)
 
-    # Show what is installed (using the *new* API)
-    installed_languages = translate.get_installed_languages()
-    print("Installed languages:")
-    for lang in installed_languages:
-        print(" -", lang.code, lang.name)
+    print("\nVerifying installed languages:")
+    langs = argos_translate.get_installed_languages()
+    for lang in langs:
+        print(f" - {lang.code}: {lang.name}")
+
+    print("\nDONE.")
